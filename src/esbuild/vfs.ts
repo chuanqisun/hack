@@ -1,22 +1,5 @@
 import type { Plugin } from "esbuild-wasm";
-
-// mock
-const files = {
-  "/src/index.js": `
-    import { msg } from "./message.js";
-    import React from "react";
-
-    console.log(msg, React);
-  `,
-
-  "/src/message.js": `
-    export const msg = "Hello from virtual file system";
-  `,
-
-  "/node_modules/react/index.js": `
-    export default { version: "fake-react" };
-  `,
-};
+import { idbFs } from "../db/idb-fs";
 
 export const virtualFsPlugin: Plugin = {
   name: "virtual-fs",
@@ -46,24 +29,38 @@ export const virtualFsPlugin: Plugin = {
       };
     });
 
-    build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
-      const contents = files[args.path as keyof typeof files];
+    build.onLoad({ filter: /.*/, namespace: "virtual" }, async (args) => {
+      try {
+        let contents = await idbFs.read(args.path);
+        if (contents instanceof ArrayBuffer) {
+          contents = new Uint8Array(contents);
+        }
 
-      if (contents == null) {
+        // Guess loader based on extension
+        let loader: "js" | "jsx" | "ts" | "tsx" | "css" | "json" | "text" = "js";
+        const ext = args.path.split(".").pop();
+        if (ext === "js" || ext === "mjs" || ext === "cjs") loader = "js";
+        else if (ext === "jsx") loader = "jsx";
+        else if (ext === "ts") loader = "ts";
+        else if (ext === "tsx") loader = "tsx";
+        else if (ext === "css") loader = "css";
+        else if (ext === "json") loader = "json";
+        else loader = "text";
+
+        return {
+          contents: contents as string | Uint8Array,
+          loader,
+          resolveDir: dirname(args.path),
+        };
+      } catch (err: any) {
         return {
           errors: [
             {
-              text: `File not found: ${args.path}`,
+              text: err instanceof Error ? err.message : String(err),
             },
           ],
         };
       }
-
-      return {
-        contents,
-        loader: "js",
-        resolveDir: dirname(args.path),
-      };
     });
   },
 };
