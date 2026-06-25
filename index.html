@@ -4,9 +4,33 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hack</title>
+    <title>hack IDE</title>
   </head>
   <body>
+    <div id="app">
+      <div id="sidebar">
+        <h2>Files</h2>
+        <div id="file-list"></div>
+        <button id="add-file-btn">+ Add File</button>
+      </div>
+      <div id="editor-container">
+        <h2 id="active-filename">Select a file from the list</h2>
+        <textarea id="file-content" placeholder="File content..." disabled></textarea>
+        <div id="editor-actions">
+          <button id="save-file-btn" disabled>Save Current File</button>
+          <button id="delete-file-btn" class="danger-btn" disabled>Delete File</button>
+        </div>
+      </div>
+      <div id="preview-container">
+        <div id="preview-header">
+          <h2>Preview</h2>
+          <button id="run-btn">▶ Run App</button>
+        </div>
+        <div id="runner">
+          <iframe id="preview-iframe"></iframe>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -74,6 +74,13 @@ export class IdbFs {
     await del(normalizedPath, this.store);
   }
 
+  async allFiles(): Promise<string[]> {
+    const entries = await keys<string>(this.store);
+    return entries
+      .filter((entry): entry is string => typeof entry === "string")
+      .sort();
+  }
+
   async list(dir = "/"): Promise<string[]> {
     const normalizedDir = normalizePath(dir);
     const entries = await keys<string>(this.store);
