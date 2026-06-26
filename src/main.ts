@@ -12,20 +12,39 @@ const files = {
   "/src/index.js": `
     import { msg } from "./message.js";
     import React from "react";
+    import "./style.css";
 
     console.log(msg, React);
     document.body.innerHTML = \`
-      <div style="font-family: sans-serif; padding: 20px; text-align: center;">
+      <div class="inner-app-container">
         <h1>\${msg}</h1>
         <p>Using: React version \${React.version}</p>
-        <button id="btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Click Me</button>
-        <p id="msg-container" style="margin-top: 20px; font-weight: bold; color: #aa3bff;"></p>
+        <button id="btn">Click Me</button>
+        <p id="msg-container"></p>
       </div>
     \`;
 
     document.getElementById("btn")?.addEventListener("click", () => {
       document.getElementById("msg-container").innerText = "Interactive app working in iframe!";
     });
+  `,
+
+  "/src/style.css": `
+    .inner-app-container {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    #btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #msg-container {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #aa3bff;
+    }
   `,
 
   "/src/message.js": `
@@ -177,13 +196,23 @@ async function compileAndRun() {
       bundle: true,
       write: false,
       format: "esm",
+      outdir: "/out",
       plugins: [httpPlugin, virtualFsPlugin],
     });
 
-    const outputText = result.outputFiles[0].text;
+    let cssContent = "";
+    let jsContent = "";
+
+    for (const file of result.outputFiles) {
+      if (file.path.endsWith(".css")) {
+        cssContent += file.text + "\n";
+      } else {
+        jsContent += file.text + "\n";
+      }
+    }
     console.log("ESBuild compilation success:", entryPoint);
 
-    // Create iframe document content with compiled esm bundle
+    // Create iframe document content with compiled esm bundle and extra CSS bundle if any
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -193,10 +222,11 @@ async function compileAndRun() {
           <style>
             body { font-family: system-ui, sans-serif; background: #fff; color: #333; margin: 0; padding: 10px; }
           </style>
+          ${cssContent ? `<style>${cssContent}</style>` : ""}
         </head>
         <body>
           <script type="module">
-            ${outputText}
+            ${jsContent}
           </script>
         </body>
       </html>
