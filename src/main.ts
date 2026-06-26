@@ -1,6 +1,7 @@
 import * as esbuild from "esbuild-wasm";
 import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 import { idbFs } from "./db/idb-fs";
+import { httpPlugin } from "./esbuild/http";
 import { virtualFsPlugin } from "./esbuild/vfs";
 import "./style.css";
 
@@ -70,7 +71,7 @@ async function refreshFileList() {
   allFiles.forEach((filePath) => {
     const item = document.createElement("div");
     item.className = "file-item" + (filePath === currentlyEditingPath ? " active" : "");
-    
+
     const label = document.createElement("span");
     label.textContent = filePath;
     label.className = "file-item-label";
@@ -84,7 +85,7 @@ async function refreshFileList() {
 async function selectFile(path: string) {
   currentlyEditingPath = path;
   activeFilename.textContent = path;
-  
+
   try {
     const rawContent = await idbFs.read(path);
     const content = typeof rawContent === "string" ? rawContent : new TextDecoder().decode(rawContent);
@@ -132,7 +133,7 @@ async function deleteCurrentFile() {
 async function createNewFile() {
   const path = prompt("Enter full file path (e.g. /src/utils.js):", "/src/");
   if (!path) return;
-  
+
   if (path === "/" || !path.startsWith("/")) {
     alert("Paths must start with '/' and not be empty");
     return;
@@ -163,7 +164,7 @@ async function compileAndRun() {
     let entryPoint = "/src/index.js";
     if (!filesInFs.includes(entryPoint)) {
       // Find any /src/** index or js files as custom entry point fallbacks, or find any remaining js files
-      const jsFiles = filesInFs.filter(f => f.endsWith(".js") || f.endsWith(".ts") || f.endsWith(".jsx") || f.endsWith(".tsx"));
+      const jsFiles = filesInFs.filter((f) => f.endsWith(".js") || f.endsWith(".ts") || f.endsWith(".jsx") || f.endsWith(".tsx"));
       if (jsFiles.length > 0) {
         entryPoint = jsFiles[0];
       } else {
@@ -176,7 +177,7 @@ async function compileAndRun() {
       bundle: true,
       write: false,
       format: "esm",
-      plugins: [virtualFsPlugin],
+      plugins: [httpPlugin, virtualFsPlugin],
     });
 
     const outputText = result.outputFiles[0].text;
@@ -230,12 +231,7 @@ async function compileAndRun() {
 }
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 export async function main() {
@@ -250,7 +246,7 @@ export async function main() {
 
   // Automatically select the first file is possible
   const allFiles = await idbFs.allFiles();
-  const indexJs = allFiles.find(f => f.includes("index.js"));
+  const indexJs = allFiles.find((f) => f.includes("index.js"));
   if (indexJs) {
     await selectFile(indexJs);
   } else if (allFiles.length > 0) {

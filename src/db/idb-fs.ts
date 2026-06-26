@@ -76,9 +76,7 @@ export class IdbFs {
 
   async allFiles(): Promise<string[]> {
     const entries = await keys<string>(this.store);
-    return entries
-      .filter((entry): entry is string => typeof entry === "string")
-      .sort();
+    return entries.filter((entry): entry is string => typeof entry === "string").sort();
   }
 
   async list(dir = "/"): Promise<string[]> {
